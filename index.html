@@ -10,7 +10,7 @@
 	<style type="text/css">
 		body {
   		margin-top: 1.0em;
-  		background-color: #f041c3;
+			background: white;
 		  font-family: "Helvetica,Arial,FreeSans"; 
   		color: #000000;
     }
@@ -52,8 +52,98 @@
       CSS Minifier and alphabetiser
     </div>
 
-    <p>Licensed under the MPL.</p><h2>Contact</h2>
-<p>Barry van Oudtshoorn (bvanoudtshoorn@gmail.com)<br/>      </p>
+    <p>There are quite a few CSS minifiers out there, which can bring the raw size of your CSS files down substantially. Very few of them, however, will also optimise your CSS for gzip compression. To that end, I&#8217;ve written a small Java application that will read in a CSS file and output its contents to stdout or another file in a format that&#8217;s optimised for gzipping.</p>
+<h2>The problem</h2>
+
+<p>A file will be most compressed when there are many recurring strings in the file. This means that when writing CSS files, this code:</p>
+<pre class="brush: css">.pony {
+border: solid red 1px;
+font-weight: bold;
+}
+.lemur {
+border: solid red 1px;
+font-weight: normal;
+}</pre>
+<p>will be better-compressed than this:</p>
+<pre class="brush: css">.pony {
+border: solid red 1px;
+font-weight: bold;
+}
+.lemur {
+font-weight: normal;
+border: red solid 1px;
+}</pre>
+<h2>What it does</h2>
+<p>Specifically, my CSS minifier will perform the following transformations on the file:</p>
+<ul>
+<li>All comments are removed.</li>
+<li>The properties within all selectors are ordered alphabetically.</li>
+
+<li>The values for all properties are ordered alphabetically.</li>
+<li>All unnecessary whitespace is removed.</li>
+</ul>
+<p>By way of example, the following CSS snippet:</p>
+<pre class="brush: css">body {
+padding: 8px;
+margin: 0;
+background-color: blue;
+color: white;
+font-family: &quot;Trebuchet MS&quot;, sans-serif;
+}
+
+h1 {
+margin: 0;
+padding: 0;
+font-size: 200%;
+color: #0F0;
+font-weight: bold;
+}
+
+p {
+margin: 0 0 2em;
+line-height: 2em;
+}</pre>
+<p>would be formatted to:</p>
+<pre class="brush: css">body{background-color:blue;color:white;font-family:&quot;Trebuchet MS&quot;,sans-serif;margin:0;padding:8px;}h1{color:#0F0;font-size:200%;font-weight:bold;margin:0;padding:0;}p{line-height:2em;margin:0 0 2em;}</pre>
+
+<h2>Compression results</h2>
+<p>A (very) large real-world CSS file of 78.2KB has a minified size of 63.7KB, which is a size decrease of nearly 20%. GZipping these two files, the un-minified file is reduced to 13.2KB, whilst the minified file weighs in at just 11.5KB &#8212; nearly 13% smaller.</p>
+<p>Clearly, removing unnecessary whitespace and reordering the contents of the CSS selectors can greatly improve the compression of your CSS files, and thus make your pages deliver more quickly.</p>
+<h2>Comparison with YUI CSS Compression</h2>
+<p>As you can see in the chart below, the <a href="http://yuilibrary.com/downloads/#yuicompressor">YUI compressor</a> manages to make the original file around 1KB smaller than my minifier. However, when the two minified files are gzipped, my compression results in a file that is 11.5KB in size, whilst YUI only reduces down to 11.8KB.<br />
+<img src="/projects/cssmin/YUIComparison.png" alt="A chart comparing YUI's CSS compression and mine" title="Original: 78.2, Original/GZ: 13.2; YUI: 62.7, YUI/GZ: 11.9; Mine: 63.7, Mine/GZ: 11.5"/></p>
+<h2>Download</h2>
+
+<p>The source for this applet is available freely, and is a single Java file. It&#8217;s not particularly pretty, because I knocked this together in about half an hour.<br />
+<a href="/projects/cssmin/CSSMin.java">Download</a><br />
+License: Mozilla Public License (In other words, do whatever you like with it. Credit is greatly appreciated, but not required.</p>
+<h2>Usage</h2>
+<p>First, if you haven&#8217;t done so yet, compile the code:</p>
+<pre class="brush: php"># javac CSSMin.java</pre>
+<p>Then, you can call the minifier by running</p>
+<pre class="brush: php"># java CSSMin in.css [out.css]</pre>
+
+<p>If you do not specify an output file, the resultant CSS will be printed to stdout (and can then be redirected as you wish).</p>
+<h2>Contact</h2>
+<p>If you have any questions or comments about this app, or if you find a bug or some weird behaviour, just comment on this post, and I&#8217;ll see what I can do.</p>
+<p>If you find this utility useful, let me know! If you want to extend it, you&#8217;re free to do whatever you like with it, as it&#8217;s under the MPL. It would be nice, though, if you dropped me a line to let me know what you&#8217;re doing with it. <img src='http://www.barryvan.com.au/wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley' /> </p>
+<h2>Future work</h2>
+<ul>
+<li>Replace &#8220;0[px,em,%,etc]&#8221; with &#8220;0&#8243;.</li>
+
+<li>Replace &#8220;0 [0 [0 [0]]]&#8221; with &#8220;0&#8243;.</li>
+<li>Replace &#8220;0.6&#8243; with &#8220;.6&#8243; wherever possible.</li>
+<li>Replace all &#8220;rgb(64, 64, 64)&#8221; with &#8220;#404040&#8243;.</li>
+
+<li>Shorten colours from #112233 to #123 wherever possible.</li>
+<li>Remove all empty rules.</li>
+<li>Ordering of property valus according to the CSS spec, not just alphabetically.</li>
+<li>A cleaner interface, including the ability to stream and process from stdin.</li>
+</ul>
+
+		
+		<h2>Contact</h2>
+<p>Barry van Oudtshoorn (bvanoudtshoorn [at] g[mail] [dot] com)<br/>      </p>
 
 
     <h2>Download</h2>
