@@ -4,12 +4,18 @@ import java.io.*;
 import java.lang.*;
 
 public class CSSMin {
+	
+	protected static boolean bDebug = false;
 
 	public static void main(String[] args) {
 		if (args.length < 1) {
-			System.out.println("You need to supply an input file, and optionally an output file (output is to stdout otherwise).");
+			System.out.println("Usage: ");
+			System.out.println("CSSMin [Input file] [Output file] [DEBUG]");
+			System.out.println("If no output file is specified, stdout will be used.");
 			return;
 		}
+		
+		bDebug = (args.length > 2);
 		
 		PrintStream out;
 		
@@ -17,7 +23,7 @@ public class CSSMin {
 			try {
 				out = new PrintStream(args[1]);
 			} catch (Exception e) {
-				System.out.println("Error outputting to " + args[1] + "; redirecting to stdout");
+				System.err.println("Error outputting to " + args[1] + "; redirecting to stdout");
 				out = System.out;
 			}
 		} else {
@@ -30,47 +36,48 @@ public class CSSMin {
 	public static void formatFile(String f, PrintStream out) {
 		try {
 			int k, n;
-			
-			//System.out.println("Reading file contents...");
-			
+
 			BufferedReader br = new BufferedReader(new FileReader(f));
 			StringBuffer sb = new StringBuffer();
 			
+			if (bDebug) {
+				System.err.println("Removing extraneous whitespace...");
+			}
 			String s;
 			while ((s = br.readLine()) != null) {
 				if (s.trim().equals("")) continue;
 				sb.append(s.replaceAll("[\t\n\r]","").replaceAll("  ", " "));
 			}
-			//System.out.println("Finished reading file contents.");
 			
-			
-			//System.out.println("Stripping comments...");
+			if (bDebug) {
+				System.err.println("Removing comments...");
+			}
 			// Find the start of the comment
 			while ((n = sb.indexOf("/*")) != -1) {
+				if (sb.charAt(n + 2) == '*') { // Retain special comments
+					n += 2;
+					continue;
+				}
 				k = sb.indexOf("*/", n + 2);
 				if (k == -1) {
-					throw new Exception("Error: Unterminated comment.");
+					throw new Exception("Unterminated comment. Aborting.");
 				}
 				sb.delete(n, k + 2);
 			}
-			//System.out.println("Finished stripping comments.");
 			
-			
-			//System.out.println("Extracting & parsing selectors...");
+			if (bDebug) {
+				System.err.println("Parsing and processing selectors...");
+			}
 			Vector<Selector> selectors = new Vector<Selector>();
 			n = 0;
 			while ((k = sb.indexOf("}", n)) != -1) {
 				try {
 					selectors.addElement(new Selector(sb.substring(n, k + 1)));
 				} catch (Exception e) {
-					//System.out.println("  Error parsing selector: skipping...");
+					System.out.println(e.getMessage());
 				}
 				n = k + 1;
 			}
-			//System.out.println("Finished extracting & parsing selectors.");
-			
-			
-			//System.out.println("Pretty-printing output...");
 			
 			for (Selector selector : selectors) {
 				out.print(selector.toString());
@@ -79,10 +86,13 @@ public class CSSMin {
 			
 			out.close();
 			
+			if (bDebug) {
+				System.err.println("Process completed successfully.");
+			}
+			
 		} catch (Exception e) {
-			System.err.println(e.getMessage());
+			System.out.println(e.getMessage());
 		}
-		
 		
 	}
 }
@@ -102,13 +112,17 @@ class Selector {
 		}
 		this.selector = parts[0].trim();
 		String contents = parts[1].trim();
-		if (contents.length() == 0) {
-			throw new Exception("Warning: Empty selector body: " + selector);
+		if (CSSMin.bDebug) {
+			System.err.println("Parsing selector: " + this.selector);
+			System.err.println("\t" + contents);
 		}
 		if (contents.charAt(contents.length() - 1) != '}') { // Ensure that we have a leading and trailing brace.
-			throw new Exception("Warning: Unterminated selector: " + selector);
+			throw new Exception("Unterminated selector: " + selector);
 		}
-		contents = contents.substring(0, contents.length() - 2);
+		if (contents.length() == 1) {
+			throw new Exception("Empty selector body: " + selector);
+		}
+		contents = contents.substring(0, contents.length() - 2);		
 		this.properties = parseProperties(contents);
 		sortProperties(this.properties);
 	}
@@ -131,14 +145,30 @@ class Selector {
 	 * @param contents The body; for example, "border: solid 1px red; color: blue;"
 	 */
 	private Property[] parseProperties(String contents) {
-		String[] parts = contents.split(";");
-		Property[] results = new Property[parts.length];
+		ArrayList<String> parts = new ArrayList<String>();
+		boolean bCanSplit = true;
+		int j = 0;
+		for (int i = 0; i < contents.length(); i++) {
+			if (CSSMin.bDebug) {
+				System.err.println("Index: " + i + "\tChar: " + contents.charAt(i) + "\tCan split: " + bCanSplit);
+			}
+			if (!bCanSplit) { // If we're inside a string
+				bCanSplit = (contents.charAt(i) == '"');
+			} else if (contents.charAt(i) == '"') {
+				bCanSplit = false;
+			} else if (contents.charAt(i) == ';') {
+				parts.add(contents.substring(j, i));
+				j = i + 1;
+			}
+		}
+		parts.add(contents.substring(j, contents.length()));
+		Property[] results = new Property[parts.size()];
 		
-		for (int i = 0; i < parts.length; i++) {
+		for (int i = 0; i < parts.size(); i++) {
 			try {
-				results[i] = new Property(parts[i]);
+				results[i] = new Property(parts.get(i));
 			} catch (Exception e) {
-				System.err.println(e.getMessage());
+				System.out.println(e.getMessage());
 				results[i] = null;
 			}
 		}
@@ -162,13 +192,35 @@ class Property implements Comparable<Property> {
 	public Property(String property) throws Exception {
 		try {
 			// Parse the property.
-			String[] parts = property.split(":"); // Split "color: red" to ["color", " red"]
-			if (parts.length < 2) {
+			ArrayList<String> parts = new ArrayList<String>();
+			boolean bCanSplit = true;
+			int j = 0;
+			if (CSSMin.bDebug) {
+				System.err.println("Examining property: " + property);
+			}
+			for (int i = 0; i < property.length(); i++) {
+				if (CSSMin.bDebug) {
+					System.err.println("Index: " + i + "\tChar: " + property.charAt(i) + "\tCan split: " + bCanSplit);
+				}
+				if (!bCanSplit) { // If we're inside a string
+					bCanSplit = (property.charAt(i) == '"');
+				} else if (property.charAt(i) == '"') {
+					bCanSplit = false;
+				} else if (property.charAt(i) == ':') {
+					if (CSSMin.bDebug) {
+						System.err.println("SPLIT!");
+					}
+					parts.add(property.substring(j, i));
+					j = i + 1;
+				}
+			}
+			parts.add(property.substring(j, property.length()));
+			if (parts.size() < 2) {
 				throw new Exception("Warning: Incomplete property: " + property);
 			}
-			this.property = parts[0].trim().toLowerCase();
+			this.property = parts.get(0).trim().toLowerCase();
 			
-			this.parts = parseValues(parts[1].trim().replaceAll(", ", ","));
+			this.parts = parseValues(parts.get(1).trim().replaceAll(", ", ","));
 			
 		} catch (PatternSyntaxException e) {
 			// Invalid regular expression used.
@@ -201,7 +253,7 @@ class Property implements Comparable<Property> {
 			try {
 				results[i] = new Part(parts[i]);
 			} catch (Exception e) {
-				System.err.println(e.getMessage());
+				System.out.println(e.getMessage());
 				results[i] = null;
 			}
 		}
