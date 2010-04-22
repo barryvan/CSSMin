@@ -149,9 +149,6 @@ class Selector {
 		boolean bCanSplit = true;
 		int j = 0;
 		for (int i = 0; i < contents.length(); i++) {
-			if (CSSMin.bDebug) {
-				System.err.println("Index: " + i + "\tChar: " + contents.charAt(i) + "\tCan split: " + bCanSplit);
-			}
 			if (!bCanSplit) { // If we're inside a string
 				bCanSplit = (contents.charAt(i) == '"');
 			} else if (contents.charAt(i) == '"') {
@@ -199,17 +196,11 @@ class Property implements Comparable<Property> {
 				System.err.println("Examining property: " + property);
 			}
 			for (int i = 0; i < property.length(); i++) {
-				if (CSSMin.bDebug) {
-					System.err.println("Index: " + i + "\tChar: " + property.charAt(i) + "\tCan split: " + bCanSplit);
-				}
 				if (!bCanSplit) { // If we're inside a string
 					bCanSplit = (property.charAt(i) == '"');
 				} else if (property.charAt(i) == '"') {
 					bCanSplit = false;
 				} else if (property.charAt(i) == ':') {
-					if (CSSMin.bDebug) {
-						System.err.println("SPLIT!");
-					}
 					parts.add(property.substring(j, i));
 					j = i + 1;
 				}
@@ -288,7 +279,9 @@ class Part {
 	}
 	
 	private void simplifyColours() {
-		System.out.println("Simplifying colours; contents is " + this.contents);
+		if (CSSMin.bDebug) {
+			System.out.println("Simplifying colours; contents is " + this.contents);
+		}
 		// Convert rgb() colours to Hex
 		if (this.contents.toLowerCase().indexOf("rgb(") == 0) {
 			String[] parts = this.contents.substring(4, this.contents.indexOf(")")).split(",");
