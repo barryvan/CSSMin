@@ -1,3 +1,17 @@
+/**
+ * CSSMin takes in well-formed, human-readable CSS and reduces its size substantially.
+ * It removes unnecessary whitespace and comments, and orders the contents of CSS
+ * selectors alphabetically to enhance GZIP compression.
+ *
+ * Originally by Barry van Oudtshoorn, with bug reports, fixes, and contributions by
+ * <ul>
+ *   <li>Kevin de Groote</li>
+ *   <li>Pedro Pinheiro</li>
+ * </ul>
+ *
+ * @author Barry van Oudtshoorn
+ */
+
 import java.util.*;
 import java.util.regex.*;
 import java.io.*;
@@ -7,6 +21,11 @@ public class CSSMin {
 	
 	protected static boolean bDebug = false;
 
+	/**
+	 * Main entry point for CSSMin from the command-line.
+	 * <b>Usage:</b> CSSMin <i>[Input file]</i>, <i>[Output file]</i>, <i>[DEBUG]</i>
+	 * @param args The command-line arguments
+	 */
 	public static void main(String[] args) {
 		if (args.length < 1) {
 			System.out.println("Usage: ");
@@ -33,20 +52,47 @@ public class CSSMin {
 		formatFile(args[0], out);
 	}
 	
-	public static void formatFile(String f, PrintStream out) {
+	/**
+	 * Process a file from a filename.
+	 * @param filename The file name of the CSS file to process.
+	 * @param out Where to send the result
+	 */
+	public static void formatFile(String filename, OutputStream out) {
+		try {
+			formatFile(new FileReader(filename), out);
+		} catch (java.io.FileNotFoundException e) {
+			System.out.println(e.getMessage());
+		}
+	}
+	
+	/**
+	 * Process input from a reader.
+	 * @param input Where to read the CSS from
+	 * @param output Where to send the result
+	 */
+	public static void formatFile(Reader input, OutputStream out) {
+		formatFile(input, new PrintStream(out));
+	}
+	
+	/**
+	 * Minify CSS from a reader to a printstream.
+	 * @param input Where to read the CSS from
+	 * @param out Where to write the result to
+	 */
+	public static void formatFile(Reader input, PrintStream out) {
 		try {
 			int k, n;
 
-			BufferedReader br = new BufferedReader(new FileReader(f));
+			BufferedReader br = new BufferedReader(input);
 			StringBuffer sb = new StringBuffer();
 			
 			if (bDebug) {
-				System.err.println("Removing extraneous whitespace...");
+				System.err.println("Reading file into StringBuffer...");
 			}
 			String s;
 			while ((s = br.readLine()) != null) {
 				if (s.trim().equals("")) continue;
-				sb.append(s.replaceAll("[\t\n\r]","").replaceAll("  ", " "));
+				sb.append(s);
 			}
 			
 			if (bDebug) {
@@ -63,6 +109,10 @@ public class CSSMin {
 					throw new Exception("Unterminated comment. Aborting.");
 				}
 				sb.delete(n, k + 2);
+			}
+			if (bDebug) {
+				System.err.println(sb.toString());
+				System.err.println("\n\n");
 			}
 			
 			if (bDebug) {
@@ -104,23 +154,24 @@ class Selector {
 	/**
 	 * Creates a new Selector using the supplied strings.
 	 * @param selector The selector; for example, "div { border: solid 1px red; color: blue; }"
+	 * @throws Exception If the selector is incomplete and cannot be parsed.
 	 */
 	public Selector(String selector) throws Exception {
 		String[] parts = selector.split("\\{"); // We have to escape the { with a \ for the regex, which itself requires escaping for the string. Sigh.
 		if (parts.length < 2) {
 			throw new Exception("Warning: Incomplete selector: " + selector);
 		}
-		this.selector = parts[0].trim();
+		this.selector = parts[0].trim().replaceAll(", ", ",");
 		String contents = parts[1].trim();
 		if (CSSMin.bDebug) {
 			System.err.println("Parsing selector: " + this.selector);
 			System.err.println("\t" + contents);
 		}
 		if (contents.charAt(contents.length() - 1) != '}') { // Ensure that we have a leading and trailing brace.
-			throw new Exception("Unterminated selector: " + selector);
+			throw new Exception("\tUnterminated selector: " + selector);
 		}
 		if (contents.length() == 1) {
-			throw new Exception("Empty selector body: " + selector);
+			throw new Exception("\tEmpty selector body: " + selector);
 		}
 		contents = contents.substring(0, contents.length() - 2);		
 		this.properties = parseProperties(contents);
@@ -129,6 +180,7 @@ class Selector {
 	
 	/**
 	 * Prints out this selector and its contents nicely, with the contents sorted alphabetically.
+	 * @returns A string representing this selector, minified.
 	 */
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
@@ -143,22 +195,26 @@ class Selector {
 	/**
 	 * Parses out the properties of a selector's body.
 	 * @param contents The body; for example, "border: solid 1px red; color: blue;"
+	 * @returns An array of properties parsed from this selector.
 	 */
 	private Property[] parseProperties(String contents) {
 		ArrayList<String> parts = new ArrayList<String>();
 		boolean bCanSplit = true;
 		int j = 0;
+		String substr;
 		for (int i = 0; i < contents.length(); i++) {
 			if (!bCanSplit) { // If we're inside a string
 				bCanSplit = (contents.charAt(i) == '"');
 			} else if (contents.charAt(i) == '"') {
 				bCanSplit = false;
 			} else if (contents.charAt(i) == ';') {
-				parts.add(contents.substring(j, i));
+				substr = contents.substring(j, i);
+				if (!(substr.trim().equals("") || (substr == null))) parts.add(substr);
 				j = i + 1;
 			}
 		}
-		parts.add(contents.substring(j, contents.length()));
+		substr = contents.substring(j, contents.length());
+		if (!(substr.trim().equals("") || (substr == null))) parts.add(substr);
 		Property[] results = new Property[parts.size()];
 		
 		for (int i = 0; i < parts.size(); i++) {
@@ -173,6 +229,10 @@ class Selector {
 		return results;
 	}
 	
+	/**
+	 * Sorts the properties array to enhance gzipping.
+	 * @param properties The array to be sorted.
+	 */
 	private void sortProperties(Property[] properties) {
 		Arrays.sort(properties);
 	}
@@ -185,6 +245,7 @@ class Property implements Comparable<Property> {
 	/**
 	 * Creates a new Property using the supplied strings. Parses out the values of the property selector.
 	 * @param property The property; for example, "border: solid 1px red;" or "-moz-box-shadow: 3px 3px 3px rgba(255, 255, 0, 0.5);".
+	 * @throws Exception If the property is incomplete and cannot be parsed.
 	 */
 	public Property(String property) throws Exception {
 		try {
@@ -192,8 +253,9 @@ class Property implements Comparable<Property> {
 			ArrayList<String> parts = new ArrayList<String>();
 			boolean bCanSplit = true;
 			int j = 0;
+			String substr;
 			if (CSSMin.bDebug) {
-				System.err.println("Examining property: " + property);
+				System.err.println("\t\tExamining property: " + property);
 			}
 			for (int i = 0; i < property.length(); i++) {
 				if (!bCanSplit) { // If we're inside a string
@@ -201,13 +263,15 @@ class Property implements Comparable<Property> {
 				} else if (property.charAt(i) == '"') {
 					bCanSplit = false;
 				} else if (property.charAt(i) == ':') {
-					parts.add(property.substring(j, i));
+					substr = property.substring(j, i);
+					if (!(substr.trim().equals("") || (substr == null))) parts.add(substr);
 					j = i + 1;
 				}
 			}
-			parts.add(property.substring(j, property.length()));
+			substr = property.substring(j, property.length());
+			if (!(substr.trim().equals("") || (substr == null))) parts.add(substr);
 			if (parts.size() < 2) {
-				throw new Exception("Warning: Incomplete property: " + property);
+				throw new Exception("\t\tWarning: Incomplete property: " + property);
 			}
 			this.property = parts.get(0).trim().toLowerCase();
 			
@@ -219,7 +283,8 @@ class Property implements Comparable<Property> {
 	}
 	
 	/**
-	 * Prints out this property nicely, with the contents sorted in a standardised order.
+	 * Prints out this property nicely.
+	 * @returns A string representing this property, minified.
 	 */
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
@@ -229,13 +294,24 @@ class Property implements Comparable<Property> {
 		}
 		sb.deleteCharAt(sb.length() - 1); // Delete the trailing comma.
 		sb.append(";");
+		if (CSSMin.bDebug) {
+			System.err.println(sb.toString());
+		}
 		return sb.toString();
 	}
 	
+	/**
+	 * Compare this property with another.
+	 */
 	public int compareTo(Property other) {
 		return this.property.compareTo(other.property);
 	}
 	
+	/**
+	 * Parse the values out of a property.
+	 * @param contents The property to parse
+	 * @returns An array of Parts
+	 */
 	private Part[] parseValues(String contents) {
 		String[] parts = contents.split(",");
 		Part[] results = new Part[parts.length];
@@ -256,6 +332,11 @@ class Property implements Comparable<Property> {
 class Part {
 	String contents;
 	
+	/**
+	 * Create a new property by parsing the given string.
+	 * @param contents The string to parse.
+	 * @throws Exception If the part cannot be parsed.
+	 */
 	public Part(String contents) throws Exception {
 		// Many of these regular expressions are adapted from those used in the YUI CSS Compressor.
 		
@@ -278,7 +359,8 @@ class Part {
 		//simplifyColours();
 	}
 	
-	private void simplifyColours() {
+	// Current non-functional
+	/*private void simplifyColours() {
 		if (CSSMin.bDebug) {
 			System.out.println("Simplifying colours; contents is " + this.contents);
 		}
@@ -314,8 +396,12 @@ class Part {
 				this.contents = sb.toString();
 			}
 		}
-	}
+	}*/
 	
+	/**
+	 * Returns itself.
+	 * @returns this part's string representation.
+	 */
 	public String toString() {
 		return this.contents;
 	}
