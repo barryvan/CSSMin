@@ -304,7 +304,11 @@ class Property implements Comparable<Property> {
 	 * Compare this property with another.
 	 */
 	public int compareTo(Property other) {
-		return this.property.compareTo(other.property);
+		// We can't just use String.compareTo(), because we need to sort properties that have hack prefixes last -- eg, *display should come after display.
+		String thisProp = (this.property.charAt(0) < 65) ? this.property.substring(1) : this.property;
+		String thatProp = (other.property.charAt(0) < 65) ? other.property.substring(1) : other.property;
+		
+		return thisProp.compareTo(thatProp);
 	}
 	
 	/**
