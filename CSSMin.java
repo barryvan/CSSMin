@@ -453,7 +453,9 @@ class Part {
 		
 		for (int i = 0; i < Constants.htmlColourNames.length; i++) {
 			if (lcContents.equals(Constants.htmlColourNames[i])) {
-				this.contents = Constants.htmlColourValues[i];
+				if (Constants.htmlColourValues[i].length() < Constants.htmlColourNames[i].length()) {
+					this.contents = Constants.htmlColourValues[i];
+				}
 				break;
 			}
 		}
@@ -638,9 +640,9 @@ class Constants {
 		"#f0ffff",
 		"#f5f5dc",
 		"#ffe4c4",
-		"#000000",
+		"#000",
 		"#ffebcd",
-		"#0000ff",
+		"#00f",
 		"#8a2be2",
 		"#a52a2a",
 		"#deb887",
@@ -651,7 +653,7 @@ class Constants {
 		"#6495ed",
 		"#fff8dc",
 		"#dc143c",
-		"#00ffff",
+		"#0ff",
 		"#00008b",
 		"#008b8b",
 		"#b8860b",
@@ -676,7 +678,7 @@ class Constants {
 		"#b22222",
 		"#fffaf0",
 		"#228b22",
-		"#ff00ff",
+		"#f0f",
 		"#dcdcdc",
 		"#f8f8ff",
 		"#ffd700",
@@ -704,13 +706,13 @@ class Constants {
 		"#ffa07a",
 		"#20b2aa",
 		"#87cefa",
-		"#778899",
+		"#789",
 		"#b0c4de",
 		"#ffffe0",
-		"#00ff00",
+		"#0f0",
 		"#32cd32",
 		"#faf0e6",
-		"#ff00ff",
+		"#f0f",
 		"#800000",
 		"#66cdaa",
 		"#0000cd",
@@ -744,7 +746,7 @@ class Constants {
 		"#dda0dd",
 		"#b0e0e6",
 		"#800080",
-		"#ff0000",
+		"#f00",
 		"#bc8f8f",
 		"#4169e1",
 		"#8b4513",
@@ -767,9 +769,9 @@ class Constants {
 		"#40e0d0",
 		"#ee82ee",
 		"#f5deb3",
-		"#ffffff",
+		"#fff",
 		"#f5f5f5",
-		"#ffff00",
+		"#ff0",
 		"#9acd32"
 	};
 }
