@@ -8,6 +8,7 @@
  *   <li>Kevin de Groote</li>
  *   <li>Pedro Pinheiro</li>
  * </ul>
+ * Some code is based on the YUI CssCompressor code, by Julien Lecomte.
  *
  * @author Barry van Oudtshoorn
  */
@@ -275,7 +276,7 @@ class Property implements Comparable<Property> {
 			}
 			this.property = parts.get(0).trim().toLowerCase();
 			
-			this.parts = parseValues(parts.get(1).trim().replaceAll(", ", ","));
+			this.parts = parseValues(simplifyRGBColours(parts.get(1).trim().replaceAll(", ", ",")));
 			
 		} catch (PatternSyntaxException e) {
 			// Invalid regular expression used.
@@ -331,6 +332,33 @@ class Property implements Comparable<Property> {
 		
 		return results;
 	}
+	
+	// Convert rgb(51,102,153) to #336699 (this code largely based on YUI code)
+	private String simplifyRGBColours(String contents) {
+		StringBuffer newContents = new StringBuffer();
+		StringBuffer hexColour;
+		String[] rgbColours;
+		int colourValue;
+		
+		Pattern pattern = Pattern.compile("rgb\\s*\\(\\s*([0-9,\\s]+)\\s*\\)");
+		Matcher matcher = pattern.matcher(contents);
+		
+		while (matcher.find()) {
+			hexColour = new StringBuffer("#");
+			rgbColours = matcher.group(1).split(",");
+			for (int i = 0; i < rgbColours.length; i++) {
+				colourValue = Integer.parseInt(rgbColours[i]);
+				if (colourValue < 16) {
+					hexColour.append("0");
+				}
+				hexColour.append(Integer.toHexString(colourValue));
+			}
+			matcher.appendReplacement(newContents, hexColour.toString());
+		}
+		matcher.appendTail(newContents);
+		
+		return newContents.toString();
+	}
 }
 
 class Part {
@@ -347,6 +375,10 @@ class Part {
 		// For simpler regexes.
 		this.contents = " " + contents;
 		
+		simplify();
+	}
+	
+	private void simplify() {
 		// Replace 0in, 0cm, etc. with just 0
 		this.contents = this.contents.replaceAll("(\\s)(0)(px|em|%|in|cm|mm|pc|pt|ex)", "$1$2");
 		
@@ -360,47 +392,26 @@ class Part {
 		if (this.contents.equals("0 0 0")) this.contents = "0";
 		if (this.contents.equals("0 0")) this.contents = "0";
 		
-		//simplifyColours();
+		simplifyHexColours();
 	}
 	
-	// Current non-functional
-	/*private void simplifyColours() {
-		if (CSSMin.bDebug) {
-			System.out.println("Simplifying colours; contents is " + this.contents);
-		}
-		// Convert rgb() colours to Hex
-		if (this.contents.toLowerCase().indexOf("rgb(") == 0) {
-			String[] parts = this.contents.substring(4, this.contents.indexOf(")")).split(",");
-			if (parts.length == 3) {
-				int r = Integer.parseInt(parts[0], 10);
-				int g = Integer.parseInt(parts[1], 10);
-				int b = Integer.parseInt(parts[2], 10);
-				
-				StringBuffer sb = new StringBuffer();
-				sb.append("#");
-				if (r < 16) sb.append("0");
-				sb.append(Integer.toHexString(r));
-				if (g < 16) sb.append("0");
-				sb.append(Integer.toHexString(g));
-				if (b < 16) sb.append("0");
-				sb.append(Integer.toHexString(b));
-				
-				this.contents = sb.toString();
-			}
-		}
+	private void simplifyHexColours() {
+		StringBuffer newContents = new StringBuffer();
 		
-		// Replace #223344 with #234
-		if ((this.contents.indexOf("#") == 0) && (this.contents.length() == 7)) {
-			this.contents = this.contents.toLowerCase(); // Always have hex colours in lower case.
-			if ((this.contents.charAt(1) == this.contents.charAt(2)) &&
-					(this.contents.charAt(3) == this.contents.charAt(4)) &&
-					(this.contents.charAt(5) == this.contents.charAt(6))) {
-				StringBuffer sb = new StringBuffer();
-				sb.append("#").append(this.contents.charAt(1)).append(this.contents.charAt(3)).append(this.contents.charAt(5));
-				this.contents = sb.toString();
+		Pattern pattern = Pattern.compile("#([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])([0-9a-fA-F])");
+		Matcher matcher = pattern.matcher(this.contents);
+		
+		while (matcher.find()) {
+			if (matcher.group(1).equalsIgnoreCase(matcher.group(2)) && matcher.group(3).equalsIgnoreCase(matcher.group(4)) && matcher.group(5).equalsIgnoreCase(matcher.group(6))) {
+				matcher.appendReplacement(newContents, "#" + matcher.group(1).toLowerCase() + matcher.group(3).toLowerCase() + matcher.group(5).toLowerCase());
+			} else {
+				matcher.appendReplacement(newContents, matcher.group().toLowerCase());
 			}
 		}
-	}*/
+		matcher.appendTail(newContents);
+		
+		this.contents = newContents.toString();
+	}
 	
 	/**
 	 * Returns itself.
