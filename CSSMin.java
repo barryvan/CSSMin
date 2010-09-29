@@ -276,7 +276,7 @@ class Property implements Comparable<Property> {
 			}
 			this.property = parts.get(0).trim().toLowerCase();
 			
-			this.parts = parseValues(simplifyRGBColours(parts.get(1).trim().replaceAll(", ", ",")));
+			this.parts = parseValues(simplifyColours(parts.get(1).trim().replaceAll(", ", ",")));
 			
 		} catch (PatternSyntaxException e) {
 			// Invalid regular expression used.
@@ -331,6 +331,12 @@ class Property implements Comparable<Property> {
 		}
 		
 		return results;
+	}
+	
+	private String simplifyColours(String contents) {
+		contents = contents.replaceAll("rgba\\(0,0,0,0\\)", "transparent");
+		
+		return simplifyRGBColours(contents);
 	}
 	
 	// Convert rgb(51,102,153) to #336699 (this code largely based on YUI code)
