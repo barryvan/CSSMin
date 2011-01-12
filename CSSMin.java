@@ -82,7 +82,10 @@ public class CSSMin {
 	 */
 	public static void formatFile(Reader input, PrintStream out) {
 		try {
-			int k, n;
+			int k,
+					j, // Number of open braces
+					n; // Current position in stream
+			char curr;
 
 			BufferedReader br = new BufferedReader(input);
 			StringBuffer sb = new StringBuffer();
@@ -121,13 +124,26 @@ public class CSSMin {
 			}
 			Vector<Selector> selectors = new Vector<Selector>();
 			n = 0;
-			while ((k = sb.indexOf("}", n)) != -1) {
-				try {
-					selectors.addElement(new Selector(sb.substring(n, k + 1)));
-				} catch (Exception e) {
-					System.out.println(e.getMessage());
+			j = 0;
+			k = 0;
+			for (int i = 0; i < sb.length(); i++) {
+				curr = sb.charAt(i);
+				if (j < 0) {
+					throw new Exception("Unbalanced braces!");
 				}
-				n = k + 1;
+				if (curr == '{') {
+					j++;
+				} else if (curr == '}') {
+					j--;
+					if (j == 0) {
+						try {
+							selectors.addElement(new Selector(sb.substring(n, i + 1)));
+						} catch (Exception e) {
+							System.out.println(e.getMessage());
+						}
+						n = i + 1;
+					}
+				}
 			}
 			
 			for (Selector selector : selectors) {
@@ -142,6 +158,7 @@ public class CSSMin {
 			}
 			
 		} catch (Exception e) {
+			e.printStackTrace(System.err);
 			System.out.println(e.getMessage());
 		}
 		
@@ -149,7 +166,8 @@ public class CSSMin {
 }
 
 class Selector {
-	private Property[] properties;
+	private Property[] properties = null;
+	private Vector<Selector> subSelectors = null;
 	private String selector;
 	
 	/**
@@ -162,21 +180,36 @@ class Selector {
 		if (parts.length < 2) {
 			throw new Exception("Warning: Incomplete selector: " + selector);
 		}
-		this.selector = parts[0].trim().replaceAll(", ", ",");
-		String contents = parts[1].trim();
-		if (CSSMin.bDebug) {
-			System.err.println("Parsing selector: " + this.selector);
-			System.err.println("\t" + contents);
+		
+		this.selector = parts[0].toString().trim().replaceAll(", ", ",");
+		
+		// We're dealing with a nested property, eg @-webkit-keyframes
+		if (parts.length > 2) {
+			this.subSelectors = new Vector<Selector>();
+			parts = selector.split("\\{|\\}");
+			for (int i = 1; i < parts.length; i += 2) {
+				parts[i] = parts[i].trim();
+				parts[i + 1] = parts[i + 1].trim();
+				if (!(parts[i].equals("") || (parts[i + 1].equals("")))) {
+					this.subSelectors.addElement(new Selector(parts[i] + "{" + parts[i + 1] + "}"));
+				}
+			}
+		} else {
+			String contents = parts[parts.length - 1].trim();
+			if (CSSMin.bDebug) {
+				System.err.println("Parsing selector: " + this.selector);
+				System.err.println("\t" + contents);
+			}
+			if (contents.charAt(contents.length() - 1) != '}') { // Ensure that we have a leading and trailing brace.
+				throw new Exception("\tUnterminated selector: " + selector);
+			}
+			if (contents.length() == 1) {
+				throw new Exception("\tEmpty selector body: " + selector);
+			}
+			contents = contents.substring(0, contents.length() - 2);		
+			this.properties = parseProperties(contents);
+			sortProperties(this.properties);
 		}
-		if (contents.charAt(contents.length() - 1) != '}') { // Ensure that we have a leading and trailing brace.
-			throw new Exception("\tUnterminated selector: " + selector);
-		}
-		if (contents.length() == 1) {
-			throw new Exception("\tEmpty selector body: " + selector);
-		}
-		contents = contents.substring(0, contents.length() - 2);		
-		this.properties = parseProperties(contents);
-		sortProperties(this.properties);
 	}
 	
 	/**
@@ -186,8 +219,15 @@ class Selector {
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append(this.selector).append("{");
-		for (Property p : this.properties) {
-			sb.append(p.toString());
+		if (this.subSelectors != null) {
+			for (Selector s : this.subSelectors) {
+				sb.append(s.toString());
+			}
+		}
+		if (this.properties != null) {
+			for (Property p : this.properties) {
+				sb.append(p.toString());
+			}
 		}
 		sb.append("}");
 		return sb.toString();
@@ -409,6 +449,12 @@ class Part {
 		// Simplify multiple-parameter properties
 		simplifyParameters();
 		
+		// Simplify font weights
+		simplifyFontWeights();
+		
+		// Strip unnecessary quotes from url() and single-word parts, and make as much lowercase as possible.
+		simplifyQuotesAndCaps();
+		
 		// Simplify colours
 		simplifyColourNames();
 		simplifyHexColours();
@@ -446,6 +492,30 @@ class Part {
 		newContents.deleteCharAt(newContents.length() - 1); // Delete the trailing space
 		
 		this.contents = newContents.toString();
+	}
+	
+	private void simplifyFontWeights() {
+		String lcContents = this.contents.toLowerCase();
+		
+		for (int i = 0; i < Constants.fontWeightNames.length; i++) {
+			if (lcContents.equals(Constants.fontWeightNames[i])) {
+				this.contents = Constants.fontWeightValues[i];
+				break;
+			}
+		}
+	}
+	
+	private void simplifyQuotesAndCaps() {
+		// Strip quotes from URLs
+		if (this.contents.matches("(?i)^url\\(")) {
+			this.contents = this.contents.replaceAll("(?i)url\\(('|\")?(.*?)\\1\\)", "url($2)");
+		} else {
+			String[] words = this.contents.split("\\s");
+			if (words.length == 1) {
+				this.contents = this.contents.toLowerCase();
+				this.contents = this.contents.replaceAll("('|\")?(.*?)\1", "$2");
+			}
+		}
 	}
 	
 	private void simplifyColourNames() {
@@ -773,5 +843,17 @@ class Constants {
 		"#f5f5f5",
 		"#ff0",
 		"#9acd32"
+	};
+	static final String[] fontWeightNames = {
+		"normal",
+		"bold",
+		"bolder",
+		"lighter"
+	};
+	static final String[] fontWeightValues = {
+		"400",
+		"700",
+		"900",
+		"100"
 	};
 }
