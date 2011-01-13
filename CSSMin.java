@@ -229,6 +229,9 @@ class Selector {
 				sb.append(p.toString());
 			}
 		}
+		if (sb.charAt(sb.length() - 1) == ';') {
+			sb.deleteCharAt(sb.length() - 1);
+		}
 		sb.append("}");
 		return sb.toString();
 	}
@@ -527,6 +530,10 @@ class Part {
 					this.contents = Constants.htmlColourValues[i];
 				}
 				break;
+			} else if (lcContents.equals(Constants.htmlColourValues[i])) {
+				if (Constants.htmlColourNames[i].length() < Constants.htmlColourValues[i].length()) {
+					this.contents = Constants.htmlColourNames[i];
+				}
 			}
 		}
 	}
