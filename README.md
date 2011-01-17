@@ -31,7 +31,7 @@ Just about everything! Nested properties benefit from compression (for example, 
 
 # Results #
 
-These are the results of compressing the main CSS file for one of the webapps I develop at work (yes, we use this in production):
+These are the results of compressing the main CSS file for one of the webapps I develop at work. Note that many of these compressors only offer an online service, which means that they can't easily be used as part of your general build process.
 
 <table>
 	<thead>
@@ -56,6 +56,15 @@ These are the results of compressing the main CSS file for one of the webapps I 
 			<td><a href="http://www.lotterypost.com/css-compress.aspx">LotteryPost</a></td>
 			<td>63609</td>
 			<td>66692</td>
+		</tr>
+		<tr>
+			<td><a href="http://www.cssdrive.com/compressor/compress_advanced.php">CSS Drive</a></td>
+			<td>69275</td>
+			<td>10795</td>
+		</tr>
+		<tr>
+			<td><a href="http://www.csscompressor.com/">CSSCompresor</a></td>
+			<td colspan="2">Only supports CSS 2.1; results invalid.</td>
 		</tr>
 		<tr>
 			<td><a href="https://github.com/barryvan/CSSMin">CSSMin</a></td>
