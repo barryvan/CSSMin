@@ -36,7 +36,7 @@ These are the results of compressing the main CSS file for one of the webapps I 
 <table>
 	<thead>
 		<tr>
-			<td></td>
+			<td>&nbsp;</td>
 			<td>Original size (bytes)</td>
 			<td>Gzipped size (bytes)</td>
 		</tr>
@@ -48,14 +48,19 @@ These are the results of compressing the main CSS file for one of the webapps I 
 			<td>12291</td>
 		</tr>
 		<tr>
-			<td>YUI</td>
+			<td><a href="http://developer.yahoo.com/yui/compressor/">YUI</a></td>
 			<td>64434</td>
 			<td>10198</td>
 		</tr>
 		<tr>
-			<td>CSSMin</td>
-			<td>63809</td>
-			<td>10182</td>
+			<td><a href="http://www.lotterypost.com/css-compress.aspx">LotteryPost</a></td>
+			<td>63609</td>
+			<td>66692</td>
+		</tr>
+		<tr>
+			<td><a href="https://github.com/barryvan/CSSMin">CSSMin</a></td>
+			<td>63791</td>
+			<td>9896</td>
 		</tr>
 	</tbody>
 </table>
