@@ -55,7 +55,7 @@ These are the results of compressing the main CSS file for one of the webapps I 
 		<tr>
 			<td><a href="http://www.lotterypost.com/css-compress.aspx">LotteryPost</a></td>
 			<td>63609</td>
-			<td>66692</td>
+			<td>10165</td>
 		</tr>
 		<tr>
 			<td><a href="http://www.cssdrive.com/compressor/compress_advanced.php">CSS Drive</a></td>
