@@ -181,7 +181,11 @@ class Selector {
 			throw new Exception("Warning: Incomplete selector: " + selector);
 		}
 		
-		this.selector = parts[0].toString().trim().replaceAll(", ", ",");
+		this.selector = parts[0].toString().trim();
+		
+		// Simplify combinators
+		this.selector = this.selector.replaceAll("\\s?(\\+|~|,|=|~=|\\^=|\\$=|\\*=|\\|=|>)\\s?", "$1");
+		
 		
 		// We're dealing with a nested property, eg @-webkit-keyframes
 		if (parts.length > 2) {
@@ -278,7 +282,7 @@ class Selector {
 	 * @param properties The array to be sorted.
 	 */
 	private void sortProperties(Property[] properties) {
-		//Arrays.sort(properties);
+		Arrays.sort(properties);
 	}
 }
 
@@ -349,8 +353,23 @@ class Property implements Comparable<Property> {
 	 */
 	public int compareTo(Property other) {
 		// We can't just use String.compareTo(), because we need to sort properties that have hack prefixes last -- eg, *display should come after display.
-		String thisProp = (this.property.charAt(0) < 65) ? this.property.substring(1) : this.property;
-		String thatProp = (other.property.charAt(0) < 65) ? other.property.substring(1) : other.property;
+		String thisProp = this.property;
+		String thatProp = other.property;
+		String[] parts;
+		
+		if (thisProp.charAt(0) == '-') {
+			thisProp = thisProp.substring(1);
+			thisProp = thisProp.substring(thisProp.indexOf('-') + 1);
+		} else if (thisProp.charAt(0) < 65) {
+			thisProp = thisProp.substring(1);
+		}
+		
+		if (thatProp.charAt(0) == '-') {
+			thatProp = thatProp.substring(1);
+			thatProp = thatProp.substring(thatProp.indexOf('-') + 1);
+		} else if (thatProp.charAt(0) < 65) {
+			thatProp = thatProp.substring(1);
+		}
 		
 		return thisProp.compareTo(thatProp);
 	}
@@ -510,7 +529,7 @@ class Part {
 	
 	private void simplifyQuotesAndCaps() {
 		// Strip quotes from URLs
-		if (this.contents.matches("(?i)^url\\(")) {
+		if ((this.contents.length() > 4) && (this.contents.substring(0, 4).equalsIgnoreCase("url("))) {
 			this.contents = this.contents.replaceAll("(?i)url\\(('|\")?(.*?)\\1\\)", "url($2)");
 		} else {
 			String[] words = this.contents.split("\\s");
