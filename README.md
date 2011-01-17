@@ -63,10 +63,6 @@ These are the results of compressing the main CSS file for one of the webapps I 
 			<td>10795</td>
 		</tr>
 		<tr>
-			<td><a href="http://www.csscompressor.com/">CSSCompresor</a></td>
-			<td colspan="2">Only supports CSS 2.1; results invalid.</td>
-		</tr>
-		<tr>
 			<td><a href="https://github.com/barryvan/CSSMin">CSSMin</a></td>
 			<td>63791</td>
 			<td>9896</td>
