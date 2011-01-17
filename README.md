@@ -1,26 +1,70 @@
 # What is it? #
 
-CSSMin is a CSS minifier. It takes your well-written, easy-to-read CSS files, and optimises them for a smaller over-the-wire size.
-Although there are a great many CSS minifiers available (including the fantastic YUI), CSSMin has a few special features that allow
-it to deliver better over-the-wire sizes than most. The most significant of these is optimisation for gzip.
+CSSMin takes your CSS file and strips out everything that’s not needed — spaces, extra semicolons, redundant units, and so on. That’s great, but there are loads of programs that do that. A shell script could do that! So what makes CSSMin different?
 
+When you deliver content over the web, best practice is to deliver it gzipped. CSSMin takes your CSS file, and optimises it for gzip compression. This means that there’s a smaller payload delivered over the wire, which results in a faster experience for your users. It does this optimisation by ensuring that the properties inside your selectors are ordered consistently (alphabetically) and in lower case. That way, the gzip algorithm can work at its best.
 
-# Optimising for gzip #
+What this means in practice is that your gzipped CSSMin-ed files are significantly smaller than plain gzipped CSS, and noticeably smaller than files that have been compressed by other means (say, YUI).
 
-The gzip algorithm works by looking for common strings and swapping them out for shorter versions. (OK, OK, that's a very simplistic
-view of how it works; if you're really that interested, check out [the wiki page](http://en.wikipedia.org/wiki/Gzip).) What this means
-in practice is that if we can organise our files to maximise the number, and length, of repeating strings, we can achieve better
-compression. In terms of CSS files, the simplest way to do this is to order our properties alphabetically. (Clearly, we can't order the
-selectors themselves alphabetically, because that could destroy the cascade tree.)
+# What does it do? #
 
+* Replaces font-weight values like 'bold' with their numeric counterparts;
+* Strips quotes wherever possible;
+* Changes as much of the contents to lowercase as possible;
+* Strips all comments from the source;
+* Removes unnecessary whitespace; and, most importantly,
+* Reorders the properties within your selectors alphabetically.
 
-# What sort of results do you achieve? #
+# What does it support? #
 
-Well, here's a chart:
-![Comparison of YUI and CSSMin](http://www.barryvan.com.au/projects/cssmin/cssmin-update.png)
+Just about everything! Nested properties benefit from compression (for example, -webkit-keyframes), whilst retaining the appropriate order. Prefixed selectors are moved to the top of the block, so that their non-prefixed counterparts will override them when the browser supports them. Most CSS hacks won't get stripped, but some involving comments might break.
 
+# Usage #
+
+1. Compile the library:
+
+		# javac CSSMin.java
+
+2. Run your CSS through it:
+
+		# java CSSMin [input] [output]
+
+# Results #
+
+These are the results of compressing the main CSS file for one of the webapps I develop at work (yes, we use this in production):
+
+<table>
+	<thead>
+		<tr>
+			<td></td>
+			<td>Original size (bytes)</td>
+			<td>Gzipped size (bytes)</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>Plain</td>
+			<td>81938</td>
+			<td>12291</td>
+		</tr>
+		<tr>
+			<td>YUI</td>
+			<td>64434</td>
+			<td>10198</td>
+		</tr>
+		<tr>
+			<td>CSSMin</td>
+			<td>63809</td>
+			<td>10182</td>
+		</tr>
+	</tbody>
+</table>
 
 # Contributors #
 
 CSSMin was originally written, and is maintained by, [Barry van Oudtshoorn](http://www.barryvan.com.au). Bug fixes and contributions have
 been made by Kevin de Groote and Pedro Pinheiro.
+
+# More information #
+
+Significant updates warrant an update on [my website](http://barryvan.com.au). [Read the latest entry.](http://www.barryvan.com.au/2011/01/cssmin-updated/)
