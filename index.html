@@ -52,109 +52,110 @@
       CSS Minifier and alphabetiser
     </div>
 
-    <p>There are quite a few CSS minifiers out there, which can bring the raw size of your CSS files down substantially. Very few of them, however, will also optimise your CSS for gzip compression. To that end, I&#8217;ve written a small Java application that will read in a CSS file and output its contents to stdout or another file in a format that&#8217;s optimised for gzipping.</p>
-<h2>The problem</h2>
+<h2>What is it?</h2>
+CSSMin takes your CSS file and strips out everything that's not needed -- spaces, extra semicolons, redundant units, and so on. That's great, but there are loads of programs that do that. A shell script could do that! So what makes CSSMin different?
 
-<p>A file will be most compressed when there are many recurring strings in the file. This means that when writing CSS files, this code:</p>
-<pre class="brush: css">.pony {
-  border: solid red 1px;
+When you deliver content over the web, best practice is to deliver it gzipped. CSSMin takes your CSS file, and optimises it for gzip compression. This means that there's a smaller payload delivered over the wire, which results in a faster experience for your users. It does this optimisation by ensuring that the properties inside your selectors are ordered consistently (alphabetically) and in lower case. That way, the gzip algorithm can work at its best.
+
+What this means in practice is that your gzipped CSSMin-ed files are significantly smaller than plain gzipped CSS, and noticeably smaller than files that have been compressed by other means (say, YUI).
+
+<h2>In this update:</h2>
+<h3>Nested properties are now fully supported.</h3>
+This means that the following CSS:
+[sourcecode language="css"]@-webkit-keyframes 'fadeUp' {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}[/sourcecode]
+is compressed down to
+[sourcecode language="css"]@-webkit-keyframes 'fadeUp'{from{opacity:0}to{opacity:1}}[/sourcecode]
+Your nested properties will have their contents compressed with all of the other tricks in system, but their order will be retained.
+
+Thanks to <a href="https://github.com/bloveridge">bloveridge</a> for reporting this bug and verifying the fix.
+
+<h3>Font weights are replaced by their numeric counterparts.</h3>
+[sourcecode language="css"].alpha {
   font-weight: bold;
 }
-.lemur {
-  border: solid red 1px;
+.beta {
   font-weight: normal;
-}</pre>
-<p>will be better-compressed than this:</p>
-<pre class="brush: css">.pony {
-  border: solid red 1px;
-  font-weight: bold;
-}
-.lemur {
-  font-weight: normal;
-  border: red solid 1px;
-}</pre>
-<h2>What it does</h2>
-<p>Specifically, my CSS minifier will perform the following transformations on the file:</p>
-<ul>
-<li>All comments are removed.</li>
-<li>The properties within all selectors are ordered alphabetically.</li>
+}[/sourcecode]
+becomes
+[sourcecode language="css"].alpha{font-weight:700}.beta{font-weight:400}[/sourcecode]
+Values supported are "lighter", "normal", "bold", and "bolder".
 
-<li>The values for all properties are ordered alphabetically.</li>
-<li>All unnecessary whitespace is removed.</li>
-</ul>
-<p>By way of example, the following CSS snippet:</p>
-<pre class="brush: css">body {
-  padding: 8px;
-  margin: 0;
-  background-color: blue;
-  color: white;
-  font-family: "Trebuchet MS", sans-serif;
-}
+<h3>Quotes are stripped where possible.</h3>
+[sourcecode language="css"].alpha {
+  background: url('ponies.png');
+  font-family: 'Times New Roman', 'Arial';
+}[/sourcecode]
+becomes
+[sourcecode language="css"].alpha{background:url(ponies.png);font-family:'Times New Roman',arial}[/sourcecode]
 
-h1 {
-  margin: 0;
-  padding: 0;
-  font-size: 200%;
-  color: #0F0;
-  font-weight: bold;
-}
+<h3>As much text as possible is changed to lower-case.</h3>
+Only selectors, quoted strings (such as 'Times New Roman') and url() values are left intact.
 
-p {
-  margin: 0 0 2em;
-  line-height: 2em;
-}</pre>
-<p>would be formatted to:</p>
-<pre class="brush: css">body{background-color:blue;color:white;font-family:"Trebuchet MS",sans-serif;margin:0;
-padding:8px;}h1{color:#0F0;font-size:200%;font-weight:bold;margin:0;padding:0;}
-p{line-height:2em;margin:0 0 2em;}</pre>
-<p>(without the line-breaks.)</p>
+Note that this means that if you mix the case of your selectors (for example, SPAN and span), your compression will be sub-optimal.
 
-<h2>Compression results</h2>
-<p>A (very) large real-world CSS file of 78.2KB has a minified size of 63.7KB, which is a size decrease of nearly 20%. GZipping these two files, the un-minified file is reduced to 13.2KB, whilst the minified file weighs in at just 11.5KB &#8212; nearly 13% smaller.</p>
-<p>Clearly, removing unnecessary whitespace and reordering the contents of the CSS selectors can greatly improve the compression of your CSS files, and thus make your pages deliver more quickly.</p>
-<h2>Comparison with YUI CSS Compression</h2>
-<p>As you can see in the chart below, the <a href="http://yuilibrary.com/downloads/#yuicompressor">YUI compressor</a> manages to make the original file around 1KB smaller than my minifier. However, when the two minified files are gzipped, my compression results in a file that is 11.5KB in size, whilst YUI only reduces down to 11.8KB.<br />
-<img src="http://www.barryvan.com.au/projects/cssmin/YUIComparison.png" alt="A chart comparing YUI's CSS compression and mine" title="Original: 78.2, Original/GZ: 13.2; YUI: 62.7, YUI/GZ: 11.9; Mine: 63.7, Mine/GZ: 11.5"/></p>
-<h2>Download</h2>
-<p>The source for this applet is available freely, and is a single Java file. It&#8217;s not particularly pretty, because I knocked this together in about half an hour.<br />
-License: Mozilla Public License (In other words, do whatever you like with it. Credit is greatly appreciated, but not required.</p>
-<p>
-      You can download this project in either
-      <a href="http://github.com/barryvan/CSSMin/zipball/master">zip</a> or
-      <a href="http://github.com/barryvan/CSSMin/tarball/master">tar</a> formats.
-    </p>
-    <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
-      by running:
-      <pre>$ git clone git://github.com/barryvan/CSSMin</pre>
-    </p>
-		
-<h2>Usage</h2>
-<p>First, if you haven&#8217;t done so yet, compile the code:</p>
-<pre class="brush: php"># javac CSSMin.java</pre>
-<p>Then, you can call the minifier by running</p>
-<pre class="brush: php"># java CSSMin in.css [out.css]</pre>
+<h3>Thanks</h3>
+Some of the ideas for this update were inspired by <a href="http://www.lotterypost.com/css-compress.aspx">Lottery Post's CSS Compressor</a>.
 
-<p>If you do not specify an output file, the resultant CSS will be printed to stdout (and can then be redirected as you wish).</p>
-<h2>Contact</h2>
-<p>If you have any questions or comments about this app, or if you find a bug or some weird behaviour, just comment on this post, and I&#8217;ll see what I can do.</p>
-<p>If you find this utility useful, let me know! If you want to extend it, you&#8217;re free to do whatever you like with it, as it&#8217;s under the MPL. It would be nice, though, if you dropped me a line to let me know what you&#8217;re doing with it. <img src='http://www.barryvan.com.au/wp-includes/images/smilies/icon_smile.gif' alt=':)' class='wp-smiley' /> </p>
-<h2>Future work</h2>
-<ul>
-<li>Replace &#8220;0[px,em,%,etc]&#8221; with &#8220;0&#8243;.</li>
+<h2>Start using it!</h2>
+<h3>Requirements</h3>
+You will need a recent version of Java and the Java compiler.
+<h3>Download</h3>
+<a href="https://github.com/barryvan/CSSMin">Download or fork it on GitHub.</a>
+<h3>Usage</h3>
+<ol><li>Compile the Java: [sourcecode]# javac CSSMin.java[/sourcecode]</li>
+<li>Run your CSS through it: [sourcecode]# java CSSMin [input] [output][/sourcecode]</li></ol>
+If you don't specify an output file, the result will be dumped to stdout. Warnings and errors are written to stderr.
 
-<li>Replace &#8220;0 [0 [0 [0]]]&#8221; with &#8220;0&#8243;.</li>
-<li>Replace &#8220;0.6&#8243; with &#8220;.6&#8243; wherever possible.</li>
-<li>Replace all &#8220;rgb(64, 64, 64)&#8221; with &#8220;#404040&#8243;.</li>
+<h2>Results</h2>
+These are the results of compressing the main CSS file for one of the webapps I develop at work. Note that many of these compressors only offer an online service, which means that they can't easily be used as part of your general build process.
 
-<li>Shorten colours from #112233 to #123 wherever possible.</li>
-<li>Remove all empty rules.</li>
-<li>Ordering of property valus according to the CSS spec, not just alphabetically.</li>
-<li>A cleaner interface, including the ability to stream and process from stdin.</li>
-</ul>
+<table class="comparison">
+	<thead>
+		<tr>
+			<td>&nbsp;</td>
+			<td>Original size (bytes)</td>
+			<td>Gzipped size (bytes)</td>
+		</tr>
+	</thead>
+	<tbody>
+		<tr>
+			<td>Plain</td>
+			<td>81938</td>
+			<td>12291</td>
+		</tr>
+		<tr>
+			<td><a href="http://developer.yahoo.com/yui/compressor/">YUI</a></td>
+			<td>64434</td>
+			<td>10198</td>
+		</tr>
+		<tr>
+			<td><a href="http://www.lotterypost.com/css-compress.aspx">LotteryPost</a></td>
+			<td>63609</td>
+			<td>10165</td>
+		</tr>
+		<tr>
+			<td><a href="http://www.cssdrive.com/compressor/compress_advanced.php">CSS Drive</a></td>
+			<td>69275</td>
+			<td>10795</td>
+		</tr>
+		<tr>
+			<td><a href="https://github.com/barryvan/CSSMin">CSSMin</a></td>
+			<td>63791</td>
+			<td>9896</td>
+		</tr>
+	</tbody>
+</table>
+
+<h2>Feedback</h2>
+Let me know how you go with it -- bug reports and feature requests are always welcome!
 
 		
 		<h2>Contact</h2>
-<p>Barry van Oudtshoorn (bvanoudtshoorn [at] g[mail] [dot] com)<br/>      </p>
+<p>Barry van Oudtshoorn (bvanoudtshoorn [at] g[mail] [dot] com)
+<br/>      </p>
 
       
     <div class="footer">
