@@ -78,3 +78,7 @@ been made by Kevin de Groote and Pedro Pinheiro.
 # More information #
 
 Significant updates warrant an update on [my website](http://barryvan.com.au). [Read the latest entry.](http://www.barryvan.com.au/2011/01/cssmin-updated/)
+
+# License #
+
+CSSMin is licensed under the BSD License. See LICENSE for details.
