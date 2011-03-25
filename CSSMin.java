@@ -103,7 +103,8 @@ public class CSSMin {
 				System.err.println("Removing comments...");
 			}
 			// Find the start of the comment
-			while ((n = sb.indexOf("/*")) != -1) {
+			n = 0;
+			while ((n = sb.indexOf("/*", n)) != -1) {
 				if (sb.charAt(n + 2) == '*') { // Retain special comments
 					n += 2;
 					continue;
