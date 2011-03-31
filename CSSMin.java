@@ -7,6 +7,7 @@
  * <ul>
  *   <li>Kevin de Groote</li>
  *   <li>Pedro Pinheiro</li>
+ *   <li>Asier Lostalé</li>
  * </ul>
  * Some code is based on the YUI CssCompressor code, by Julien Lecomte.
  *
