@@ -1,0 +1,22 @@
+<project name="CSSMin" default="dist" basedir=".">
+
+	<target name="compile">
+		<javac srcdir="." includes="CSSMin.java" debug="on"></javac>
+	</target>
+	
+	<target name="dist" depends="compile">
+		<jar destfile="CSSMin.jar">
+			<fileset dir="." includes="*.class"/>
+			<manifest>
+				<attribute name="Main-Class" value="CSSMin"/>
+			</manifest>
+		</jar>
+	</target>
+	
+	<target name="clean">
+		<delete>
+			<fileset dir="." includes="*.class"/>
+			<fileset dir="." includes="*.jar"/>
+		</delete>
+	</target>
+</project>

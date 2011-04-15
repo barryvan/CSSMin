@@ -387,7 +387,7 @@ class Property implements Comparable<Property> {
 		
 		for (int i = 0; i < parts.length; i++) {
 			try {
-				results[i] = new Part(parts[i]);
+				results[i] = new Part(parts[i], property);
 			} catch (Exception e) {
 				System.out.println(e.getMessage());
 				results[i] = null;
@@ -437,17 +437,19 @@ class Property implements Comparable<Property> {
 
 class Part {
 	String contents;
+	String property;
 	
 	/**
 	 * Create a new property by parsing the given string.
 	 * @param contents The string to parse.
 	 * @throws Exception If the part cannot be parsed.
 	 */
-	public Part(String contents) throws Exception {
+	public Part(String contents, String property) throws Exception {
 		// Many of these regular expressions are adapted from those used in the YUI CSS Compressor.
 		
 		// For simpler regexes.
 		this.contents = " " + contents;
+		this.property = property;
 		
 		simplify();
 	}
@@ -519,6 +521,8 @@ class Part {
 	}
 	
 	private void simplifyFontWeights() {
+		if (!this.property.equals("font-weight")) return;
+		
 		String lcContents = this.contents.toLowerCase();
 		
 		for (int i = 0; i < Constants.fontWeightNames.length; i++) {
