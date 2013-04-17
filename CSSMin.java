@@ -112,7 +112,7 @@ public class CSSMin {
 				}
 				k = sb.indexOf("*/", n + 2);
 				if (k == -1) {
-					throw new Exception("Unterminated comment. Aborting.");
+					throw new UnterminatedCommentException();
 				}
 				sb.delete(n, k + 2);
 			}
@@ -131,7 +131,7 @@ public class CSSMin {
 			for (int i = 0; i < sb.length(); i++) {
 				curr = sb.charAt(i);
 				if (j < 0) {
-					throw new Exception("Unbalanced braces!");
+					throw new UnbalancedBracesException();
 				}
 				if (curr == '{') {
 					j++;
@@ -140,8 +140,10 @@ public class CSSMin {
 					if (j == 0) {
 						try {
 							selectors.addElement(new Selector(sb.substring(n, i + 1)));
-						} catch (Exception e) {
-							System.out.println(e.getMessage());
+						} catch (UnterminatedSelectorException usex) {
+							System.out.println("Unterminated selector: " + usex.getMessage());
+						} catch (EmptySelectorBodyException ebex) {
+							if (bDebug) System.out.println("Empty selector body: " + ebex.getMessage());
 						}
 						n = i + 1;
 					}
@@ -159,9 +161,13 @@ public class CSSMin {
 				System.err.println("Process completed successfully.");
 			}
 			
-		} catch (Exception e) {
-			e.printStackTrace(System.err);
-			System.out.println(e.getMessage());
+		} catch (UnterminatedCommentException ucex) {
+			System.out.println("Unterminated comment.");
+		} catch (UnbalancedBracesException ubex) {
+			System.out.println("Unbalanced braces.");
+		} catch (Exception ex) {
+			ex.printStackTrace(System.err);
+			System.out.println(ex.getMessage());
 		}
 		
 	}
@@ -177,10 +183,10 @@ class Selector {
 	 * @param selector The selector; for example, "div { border: solid 1px red; color: blue; }"
 	 * @throws Exception If the selector is incomplete and cannot be parsed.
 	 */
-	public Selector(String selector) throws Exception {
+	public Selector(String selector) throws IncompleteSelectorException, UnterminatedSelectorException, EmptySelectorBodyException {
 		String[] parts = selector.split("\\{"); // We have to escape the { with a \ for the regex, which itself requires escaping for the string. Sigh.
 		if (parts.length < 2) {
-			throw new Exception("Warning: Incomplete selector: " + selector);
+			throw new IncompleteSelectorException(selector);
 		}
 		
 		this.selector = parts[0].toString().trim();
@@ -207,10 +213,10 @@ class Selector {
 				System.err.println("\t" + contents);
 			}
 			if (contents.charAt(contents.length() - 1) != '}') { // Ensure that we have a leading and trailing brace.
-				throw new Exception("\tUnterminated selector: " + selector);
+				throw new UnterminatedSelectorException(selector);
 			}
 			if (contents.length() == 1) {
-				throw new Exception("\tEmpty selector body: " + selector);
+				throw new EmptySelectorBodyException(selector);
 			}
 			contents = contents.substring(0, contents.length() - 2);		
 			this.properties = parseProperties(contents);
@@ -270,8 +276,8 @@ class Selector {
 		for (int i = 0; i < parts.size(); i++) {
 			try {
 				results[i] = new Property(parts.get(i));
-			} catch (Exception e) {
-				System.out.println(e.getMessage());
+			} catch (IncompletePropertyException ipex) {
+				System.out.println("Incomplete property: " + ipex.getMessage());
 				results[i] = null;
 			}
 		}
@@ -297,7 +303,7 @@ class Property implements Comparable<Property> {
 	 * @param property The property; for example, "border: solid 1px red;" or "-moz-box-shadow: 3px 3px 3px rgba(255, 255, 0, 0.5);".
 	 * @throws Exception If the property is incomplete and cannot be parsed.
 	 */
-	public Property(String property) throws Exception {
+	public Property(String property) throws IncompletePropertyException {
 		try {
 			// Parse the property.
 			ArrayList<String> parts = new ArrayList<String>();
@@ -321,7 +327,7 @@ class Property implements Comparable<Property> {
 			substr = property.substring(j, property.length());
 			if (!(substr.trim().equals("") || (substr == null))) parts.add(substr);
 			if (parts.size() < 2) {
-				throw new Exception("\t\tWarning: Incomplete property: " + property);
+				throw new IncompletePropertyException(property);
 			}
 			this.property = parts.get(0).trim().toLowerCase();
 			
@@ -587,6 +593,45 @@ class Part {
 	 */
 	public String toString() {
 		return this.contents;
+	}
+}
+
+class UnterminatedCommentException extends Exception {}
+class UnbalancedBracesException extends Exception {}
+class IncompletePropertyException extends Exception {
+	String message = null;
+	public IncompletePropertyException(String message) {
+		this.message = message;
+	}
+	public String getMessage() {
+		return this.message;
+	}
+}
+class EmptySelectorBodyException extends Exception {
+	String message = null;
+	public EmptySelectorBodyException(String message) {
+		this.message = message;
+	}
+	public String getMessage() {
+		return this.message;
+	}
+}
+class UnterminatedSelectorException extends Exception {
+	String message = null;
+	public UnterminatedSelectorException(String message) {
+		this.message = message;
+	}
+	public String getMessage() {
+		return this.message;
+	}
+}
+class IncompleteSelectorException extends Exception {
+	String message = null;
+	public IncompleteSelectorException(String message) {
+		this.message = message;
+	}
+	public String getMessage() {
+		return this.message;
 	}
 }
 
