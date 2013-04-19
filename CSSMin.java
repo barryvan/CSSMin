@@ -279,7 +279,7 @@ class Selector {
 			try {
 				results.add(new Property(parts.get(i)));
 			} catch (IncompletePropertyException ipex) {
-				System.out.println("Incomplete property: " + ipex.getMessage());
+				System.out.println("Incomplete property in selector \"" + this.selector + "\": \"" + ipex.getMessage() + "\"");
 			}
 		}
 		
