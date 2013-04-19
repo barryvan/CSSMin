@@ -218,8 +218,10 @@ class Selector {
 			if (contents.length() == 1) {
 				throw new EmptySelectorBodyException(selector);
 			}
-			contents = contents.substring(0, contents.length() - 2);		
-			this.properties = parseProperties(contents);
+			contents = contents.substring(0, contents.length() - 2);
+			
+			this.properties = new Property[0];
+			this.properties = parseProperties(contents).toArray(this.properties);
 			sortProperties(this.properties);
 		}
 	}
@@ -253,7 +255,7 @@ class Selector {
 	 * @param contents The body; for example, "border: solid 1px red; color: blue;"
 	 * @returns An array of properties parsed from this selector.
 	 */
-	private Property[] parseProperties(String contents) {
+	private ArrayList<Property> parseProperties(String contents) {
 		ArrayList<String> parts = new ArrayList<String>();
 		boolean bCanSplit = true;
 		int j = 0;
@@ -271,14 +273,13 @@ class Selector {
 		}
 		substr = contents.substring(j, contents.length());
 		if (!(substr.trim().equals("") || (substr == null))) parts.add(substr);
-		Property[] results = new Property[parts.size()];
 		
+		ArrayList<Property> results = new ArrayList<Property>();
 		for (int i = 0; i < parts.size(); i++) {
 			try {
-				results[i] = new Property(parts.get(i));
+				results.add(new Property(parts.get(i)));
 			} catch (IncompletePropertyException ipex) {
 				System.out.println("Incomplete property: " + ipex.getMessage());
-				results[i] = null;
 			}
 		}
 		
