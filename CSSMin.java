@@ -494,6 +494,8 @@ class Part {
 	}
 	
 	private void simplifyParameters() {
+		if (this.property.equals("background-size")) return;
+		
 		StringBuffer newContents = new StringBuffer();
 		
 		String[] params = this.contents.split(" ");
