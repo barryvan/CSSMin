@@ -198,7 +198,7 @@ class Selector {
 		// We're dealing with a nested property, eg @-webkit-keyframes
 		if (parts.length > 2) {
 			this.subSelectors = new Vector<Selector>();
-			parts = selector.split("\\{|\\}");
+			parts = selector.split("(\\s*\\{\\s*)|(\\s*\\}\\s*)");
 			for (int i = 1; i < parts.length; i += 2) {
 				parts[i] = parts[i].trim();
 				parts[i + 1] = parts[i + 1].trim();
