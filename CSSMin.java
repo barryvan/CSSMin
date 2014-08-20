@@ -257,14 +257,19 @@ class Selector {
 	 */
 	private ArrayList<Property> parseProperties(String contents) {
 		ArrayList<String> parts = new ArrayList<String>();
-		boolean bCanSplit = true;
+		boolean bInsideString = false,
+			bInsideURL = false;
 		int j = 0;
 		String substr;
 		for (int i = 0; i < contents.length(); i++) {
-			if (!bCanSplit) { // If we're inside a string
-				bCanSplit = (contents.charAt(i) == '"');
+			if (bInsideString) { // If we're inside a string
+				bInsideString = !(contents.charAt(i) == '"');
+			} else if (bInsideURL) { // If we're inside a URL
+				bInsideURL = !(contents.charAt(i) == ')');
 			} else if (contents.charAt(i) == '"') {
-				bCanSplit = false;
+				bInsideString = true;
+			} else if (contents.charAt(i) == '(') {
+				if ((i - 3) > 0 && "url".equals(contents.substring(i - 3, i))) bInsideURL = true;
 			} else if (contents.charAt(i) == ';') {
 				substr = contents.substring(j, i);
 				if (!(substr.trim().equals("") || (substr == null))) parts.add(substr);
@@ -319,7 +324,7 @@ class Property implements Comparable<Property> {
 					bCanSplit = (property.charAt(i) == '"');
 				} else if (property.charAt(i) == '"') {
 					bCanSplit = false;
-				} else if (property.charAt(i) == ':') {
+				} else if (property.charAt(i) == ':' && parts.size() < 1) {
 					substr = property.substring(j, i);
 					if (!(substr.trim().equals("") || (substr == null))) parts.add(substr);
 					j = i + 1;
