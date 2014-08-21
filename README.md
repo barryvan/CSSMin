@@ -72,8 +72,15 @@ These are the results of compressing the main CSS file for one of the webapps I 
 
 # Contributors #
 
-CSSMin was originally written, and is maintained by, [Barry van Oudtshoorn](http://www.barryvan.com.au). Bug fixes and contributions have
-been made by Kevin de Groote and Pedro Pinheiro.
+CSSMin was originally written, and is maintained by, [Barry van Oudtshoorn](http://www.barryvan.com.au).
+
+Contributors:
+
+* Kevin de Groote
+* Pedro Pinheiro
+* [alostale](https://github.com/alostale)
+* [discoB](https://github.com/discoB)
+* [si13b](https://github.com/si13b)
 
 # More information #
 
