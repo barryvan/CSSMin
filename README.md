@@ -21,13 +21,15 @@ Just about everything! Nested properties benefit from compression (for example, 
 
 # Usage #
 
-1. Compile the library:
+1. Compile the library with `ant`:
 
-		# javac CSSMin.java
+		# ant
 
 2. Run your CSS through it:
 
-		# java CSSMin [input] [output]
+		# java -jar CSSMin.jar [input] [output]
+
+3. Profit!
 
 # Results #
 
@@ -81,10 +83,6 @@ Contributors:
 * [alostale](https://github.com/alostale)
 * [discoB](https://github.com/discoB)
 * [si13b](https://github.com/si13b)
-
-# More information #
-
-Significant updates warrant an update on [my website](http://barryvan.com.au). [Read the latest entry.](http://www.barryvan.com.au/2011/01/cssmin-updated/)
 
 # License #
 
