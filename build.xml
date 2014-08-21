@@ -4,13 +4,40 @@
 		<javac srcdir="." includes="CSSMin.java" debug="on"></javac>
 	</target>
 	
+	<target name="testcompile" depends="compile">
+		<javac srcdir="." includes="CSSMinTest.java" debug="on">
+			<classpath>
+				<fileset dir="testlib/">
+					<include name="*.jar"/>
+				</fileset>
+			</classpath>
+		</javac>
+	</target>
+	
 	<target name="dist" depends="compile">
 		<jar destfile="CSSMin.jar">
-			<fileset dir="." includes="*.class"/>
+			<fileset dir="." includes="*.class" excludes="CSSMinTest.class"/>
 			<manifest>
 				<attribute name="Main-Class" value="CSSMin"/>
 			</manifest>
 		</jar>
+	</target>
+	
+	<target name="test" depends="testcompile">
+		<junit printsummary="on" fork="true" haltonfailure="yes">
+			<classpath>
+				<dirset dir="."></dirset>
+				<fileset dir="testlib/">
+					<include name="*.jar"/>
+				</fileset>
+			</classpath>
+			<formatter type="plain" usefile="false"/>
+			<batchtest todir=".">
+				<fileset dir=".">
+					<include name="*Test.java" />
+				</fileset>
+			</batchtest>
+		</junit>
 	</target>
 	
 	<target name="clean">
