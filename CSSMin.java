@@ -188,7 +188,7 @@ class Selector {
 		if (parts.length < 2) {
 			throw new IncompleteSelectorException(selector);
 		}
-		
+
 		this.selector = parts[0].toString().trim();
 		
 		// Simplify combinators
@@ -335,7 +335,12 @@ class Property implements Comparable<Property> {
 			if (parts.size() < 2) {
 				throw new IncompletePropertyException(property);
 			}
-			this.property = parts.get(0).trim().toLowerCase();
+
+			String prop = parts.get(0).trim();
+			if (!(prop.length() > 2 && prop.substring(0, 2).equals("--"))) {
+				prop = prop.toLowerCase();
+			}
+			this.property = prop;
 			
 			this.parts = parseValues(simplifyColours(parts.get(1).trim().replaceAll(", ", ",")));
 			
@@ -551,10 +556,14 @@ class Part {
 		// Strip quotes from URLs
 		if ((this.contents.length() > 4) && (this.contents.substring(0, 4).equalsIgnoreCase("url("))) {
 			this.contents = this.contents.replaceAll("(?i)url\\(('|\")?(.*?)\\1\\)", "url($2)");
-		} else {
+		} else if ((this.contents.length() > 4) && (this.contents.substring(0, 4).equalsIgnoreCase("var("))) {
+			this.contents = this.contents.replaceAll("\\s", "");
+		}	else {
 			String[] words = this.contents.split("\\s");
 			if (words.length == 1) {
-				this.contents = this.contents.toLowerCase();
+				if (!this.property.equalsIgnoreCase("animation-name")) {
+					this.contents = this.contents.toLowerCase();
+				}
 				this.contents = this.contents.replaceAll("('|\")?(.*?)\1", "$2");
 			}
 		}

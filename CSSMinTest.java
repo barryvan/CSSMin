@@ -173,4 +173,57 @@ public class CSSMinTest
 			, ".someClass{background-size:100% 100%}");
 	}
 
+	@Test
+	public void testAnimationCasing() throws Exception
+	{
+		assertCSSMin(
+			"Animation name not lowercase",
+			// This:
+			".folioViewer > .pane > .list.busy::after { " +
+			"	animation-name: Folioviewer-listspinner; " +
+			"	animation-duration: 0.5s; " +
+			"	animation-iteration-count: infinite; " +
+			"	animation-timing-function: ease-in-out; " +
+			"} "
+			// Should be:
+			, ".folioViewer>.pane>.list.busy::after{animation-duration:0.5s;animation-iteration-count:infinite;animation-name:Folioviewer-listspinner;animation-timing-function:ease-in-out}");
+	}
+
+	@Test
+	public void testAnimationShorthandCasing() throws Exception
+	{
+		assertCSSMin(
+				"Animation name not lowercase",
+				// This:
+				":root { " +
+				"	--mYcolor: black; " +
+				"	--MYcolor2: orange; " +
+				"} " +
+				".folioViewer > .pane > .list.busy::after { " +
+				"	color : var(              --mYcolor); " +
+				"	background : var(--MYcolor2); " +
+				"} "
+				// Should be:
+				, ":root{--MYcolor2:orange;--mYcolor:#000}.folioViewer>.pane>.list.busy::after{background:var(--MYcolor2);color:var(--mYcolor)}");
+
+		assertCSSMin(
+				"Animation name not lowercase",
+				// This:
+				":root { " +
+				"	--mYcolor: black; " +
+				"} " +
+				".folioViewer > .pane > .list.busy::after { " +
+				"	color : var(              --mYcolor); " +
+				"} " +
+				"\n" +
+				".folioViewer > .pane > .list.busy::after { " +
+				"	animation-name: Folioviewer-listspinner; " +
+				"	animation-duration: 0.5s; " +
+				"	animation-iteration-count: infinite; " +
+				"	animation-timing-function: ease-in-out; " +
+				"} "
+				// Should be:
+				, ":root{--mYcolor:#000}.folioViewer>.pane>.list.busy::after{color:var(--mYcolor)}.folioViewer>.pane>.list.busy::after{animation-duration:0.5s;animation-iteration-count:infinite;animation-name:Folioviewer-listspinner;animation-timing-function:ease-in-out}");
+	}
+
 }
