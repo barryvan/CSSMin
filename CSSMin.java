@@ -504,7 +504,9 @@ class Part {
 	}
 	
 	private void simplifyParameters() {
-		if (this.property.equals("background-size")) return;
+		if (this.property.equals("background-size")
+                    || this.property.equals("quotes")
+                    || this.property.equals("transform-origin")) return;
 		
 		StringBuffer newContents = new StringBuffer();
 		
