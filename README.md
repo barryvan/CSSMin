@@ -84,6 +84,7 @@ Contributors:
 * [discoB](https://github.com/discoB)
 * [si13b](https://github.com/si13b)
 * [huilibaba](https://github.com/huilibaba)
+* [caristu](https://github.com/caristu)
 
 # License #
 
